@@ -1,0 +1,94 @@
+models:
+  parnet.7m-0.0:
+    blob_metadata: "penalized model, 7M parameters, 2025-01-10 ; official Github distribution parnet v0.3.0"
+    is_old_model: False
+    parnet_version: "0.3.0"
+    is_penalized: True
+    penalty: 0.0
+    identifier_table_of_tasks: "full_rbp_set"
+
+    outputs_keys: [target, control, total, mix_coeff, penalty_loss]
+    apply_softmax: [target, control, total]
+    squeeze_last_dim: [penalty_loss]
+
+  parnet.7m-2.5:
+    blob_metadata: "penalized model, 7M parameters, penalty of 2.5, 2025-01-10"
+    is_old_model: False
+    parnet_version: "0.3.0"
+    is_penalized: True
+    penalty: 2.5
+    identifier_table_of_tasks: "full_rbp_set"
+
+    outputs_keys: [target, control, total, mix_coeff, penalty_loss]
+    apply_softmax: [target, control, total]
+    squeeze_last_dim: [penalty_loss]
+
+  parnet.7m-10.0:
+    blob_metadata: "penalized model, 7M parameters, penalty of 10.0, 2025-01-10"
+    is_old_model: False
+    parnet_version: "0.3.0"
+    is_penalized: True
+    penalty: 10.0
+    identifier_table_of_tasks: "full_rbp_set"
+
+    outputs_keys: [target, control, total, mix_coeff, penalty_loss]
+    apply_softmax: [target, control, total]
+    squeeze_last_dim: [penalty_loss]
+
+  parnet.7m-20.0:
+    blob_metadata: "penalized model, 7M parameters, penalty of 20.0, 2025-01-10"
+    is_old_model: False
+    parnet_version: "0.3.0"
+    is_penalized: True
+    penalty: 20.0
+    identifier_table_of_tasks: "full_rbp_set"
+
+    outputs_keys: [target, control, total, mix_coeff, penalty_loss]
+    apply_softmax: [target, control, total]
+    squeeze_last_dim: [penalty_loss]
+
+  parnet.7m-80.0:
+    blob_metadata: "penalized model, 7M parameters, penalty of 80.0, 2025-01-10"
+    is_old_model: False
+    parnet_version: "0.3.0"
+    is_penalized: True
+    penalty: 80.0
+    identifier_table_of_tasks: "full_rbp_set"
+
+    outputs_keys: [target, control, total, mix_coeff, penalty_loss]
+    apply_softmax: [target, control, total]
+    squeeze_last_dim: [penalty_loss]
+
+  #
+
+  parnet_new.11m-5.0:
+    blob_metadata: "PARNET v0.5.0 penalized model, 11M parameters, penalty of 5.0, 2025-08"
+    is_old_model: False
+    parnet_version: "0.5.0"
+    is_penalized: True
+    penalty: 80.0
+
+    outputs_keys: [target, control, total, mix_coeff]
+    apply_softmax: [target, control, total]
+
+  #
+
+  parnet.21m-0.0:
+    blob_metadata: "21M parameters, 2024-11-26"
+    is_old_model: True,
+    parnet_version: "0.1.0"
+    is_penalized: False,
+    identifier_table_of_tasks: "full_rbp_set"
+    outputs_keys: [target, control, total, mix_coeff]
+    apply_softmax: [target, control, total]
+
+  parnet.21m-5.0:
+    blob_metadata: "penalized model, 21M parameters, penalty of 5.0, 2024-11-26"
+    is_old_model: True
+    parnet_version: "0.1.0"
+    is_penalized: True
+    penalty: 5.0
+
+    outputs_keys: [target, control, total, mix_coeff]
+    apply_softmax: [target, control, total]
+    identifier_table_of_tasks: "full_rbp_set"
