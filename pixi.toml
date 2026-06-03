@@ -153,8 +153,8 @@ igv-notebook = { git = "git+https://github.com/igvteam/igv-notebook.git", rev = 
 
 captum = ">=0.7.0,<0.8"
 gin-config = "==0.5.0"
-datasets = ">=3.6.0"
-lightning = ">=2.3"
+datasets = ">=3.6.0,<4.0.0"
+lightning = ">=2.3,<2.6"
 lightning-utilities = ">=0.14,<0.15"
 transformers = ">=4.40,<5"
 torchmetrics = ">=1.8.2,<2"
@@ -170,11 +170,6 @@ pytorch-cpu = "==2.5.1"
 
 tensorflow = { version = ">=2.16,<2.17" }
 parnet = { git = "git+https://github.com/lambosaur/parnet.git", rev = "2e14278" }
-# Add project-specific local editable installs here, e.g.:
-# my-project = { path = ".", editable = true, extras = [] }
-
-parnet_analyses_libs = { git = "git+https://github.com/parnet-project/parnet_analyses_libs.git", rev = "main" }
-parnet_additional_utils = { git = "git+https://github.com/parnet-project/parnet_additional_utils.git", rev = "main" }
 
 # ===============================================================
 
@@ -198,10 +193,6 @@ tensorflow = { version = ">=2.16,<2.17", extras = ["and-cuda"] }
 parnet = { git = "git+https://github.com/lambosaur/parnet.git", rev = "2e14278", extras = [
     "gpu",
 ] }
-# Add project-specific local editable installs here, e.g.:
-# my-project = { path = ".", editable = true, extras = [] }
-parnet_analyses_libs = { git = "git+https://github.com/parnet-project/parnet_analyses_libs.git", rev = "main", extras = ["gpu"] }
-parnet_additional_utils = { git = "git+https://github.com/parnet-project/parnet_additional_utils.git", rev = "main" }
 
 nx-cugraph-cu11 = "==25.6.0"
 cudf-cu11 = ">=25.0,<26.0"
@@ -222,7 +213,7 @@ system-requirements = { cuda = "12.8" }
 # cuda-version pins conda CUDA libs for cupy; no pytorch-gpu (installed via PyPI below).
 cuda-version = "12.8.*"
 cupy = ">=13.6.0,<14"
-datasets = ">=3.6.0"
+datasets = ">=3.6.0,<4.0.0"
 transformers = ">=4.40"
 gin-config = "==0.5.0"
 
@@ -243,7 +234,7 @@ torch = ">=2.6.0"
 # with the PyPI torch). parnet-all is excluded from parnet-dev-cu12 for this reason.
 # datasets is installed via conda (above) to avoid dill/pyarrow conda pin conflicts.
 captum = ">=0.7.0,<0.8"
-lightning = ">=2.3"
+lightning = ">=2.3,<2.6"
 lightning-utilities = ">=0.14,<0.15"
 torchmetrics = ">=1.8.2,<2"
 
@@ -251,8 +242,6 @@ torchmetrics = ">=1.8.2,<2"
 # at conflicting versions and cannot coexist in the same PyPI environment.
 tensorflow = { version = ">=2.16,<2.17" }
 parnet = { git = "git+https://github.com/lambosaur/parnet.git", rev = "dev" }
-parnet_analyses_libs = { path = "../parnet_analyses_libs", editable = true }
-parnet_additional_utils = { path = "../parnet_additional_utils", editable = true }
 
 # cudf <25.10 needs pyarrow<20, but conda pins pyarrow==20.0.0.
 # cudf >=25.10 requires exactly pyarrow==20.0.0 — matching the conda pin.
@@ -262,8 +251,25 @@ cuml-cu12 = ">=25.0,<26.0"
 
 # ===============================================================
 
+[feature.parnet-libs-git.pypi-dependencies]
+
+parnet_analyses_libs = { git = "git+https://github.com/parnet-project/parnet_analyses_libs.git", rev = "main" }
+parnet_additional_utils = { git = "git+https://github.com/parnet-project/parnet_additional_utils.git", rev = "main" }
+
+# ===============================================================
+
+[feature.parnet-libs-local.pypi-dependencies]
+
+parnet_analyses_libs = { path = "../../parnet_analyses_libs", editable = true }
+parnet_additional_utils = { path = "../../parnet_additional_utils", editable = true }
+
+# ===============================================================
+
 [environments]
 
-parnet-dev = ["parnet-all", "parnet-cpu", "bio", "jupyter", "dev"]
-parnet-dev-cu11 = ["parnet-all", "parnet-gpu-cu11", "bio", "jupyter", "dev"]
-parnet-dev-cu12 = ["parnet-gpu-cu12", "bio", "jupyter", "dev"]
+parnet-dev            = ["parnet-all", "parnet-cpu",      "parnet-libs-git",   "bio", "jupyter", "dev"]
+parnet-dev-local      = ["parnet-all", "parnet-cpu",      "parnet-libs-local", "bio", "jupyter", "dev"]
+parnet-dev-cu11       = ["parnet-all", "parnet-gpu-cu11", "parnet-libs-git",   "bio", "jupyter", "dev"]
+parnet-dev-cu11-local = ["parnet-all", "parnet-gpu-cu11", "parnet-libs-local", "bio", "jupyter", "dev"]
+parnet-dev-cu12       = ["parnet-gpu-cu12", "parnet-libs-git",   "bio", "jupyter", "dev"]
+parnet-dev-cu12-local = ["parnet-gpu-cu12", "parnet-libs-local", "bio", "jupyter", "dev"]
