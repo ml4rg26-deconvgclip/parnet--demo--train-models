@@ -69,10 +69,12 @@ PATH_LOCAL=resources/parnet-encore-eclip/600nt_windows.no-one-hot.prepadded/
 mkdir -p $PATH_LOCAL
 
 time pixi run -e parnet-dev-cu11 python scripts/convert_hfds_to_pt.py \
-    --input  $PATH_SOURCE_FOLDER_HFDS \
-    --output $PATH_LOCAL/encode.filtered.pt \
-    --metadata-basename encode.filtered \  # Will write encode.filtered.metadata.yaml alongside the .pt output.
-    --total-key eCLIP \                    # Pin total_key explicitly; otherwise defaults to first task key.
+    --input          $PATH_SOURCE_FOLDER_HFDS \
+    --output         $PATH_LOCAL/encode.filtered.pt \
+    --metadata-basename encode.filtered \
+    --total-key      eCLIP \
+    --is-pre-padded  true \
+    --seq-len        600 \
     ;
 
 
@@ -96,11 +98,13 @@ PATH_LOCAL=resources/parnet-encore-eclip/600nt_windows.no-one-hot.prepadded/
 
 # num-shards matches source (validation split is now named 'valid' in .pt)
 time pixi run -e parnet-dev-cu11 python scripts/convert_pt_to_hfds.py \
-    --input     $PATH_LOCAL/encode.filtered.pt \
-    --outputdir $PATH_LOCAL/encode.filtered.hfds \
-    --num-shards train:76,valid:18,test:10 \
+    --input          $PATH_LOCAL/encode.filtered.pt \
+    --outputdir      $PATH_LOCAL/encode.filtered.hfds \
+    --num-shards     train:76,valid:18,test:10 \
     --metadata-basename encode.filtered.hfds \
-    --total-key eCLIP \
+    --total-key      eCLIP \
+    --is-pre-padded  true \
+    --seq-len        600 \
     ;
 ```
 
@@ -139,7 +143,21 @@ class re-pads at batch time using the stored `pad_side`.
 
 Time: ~20 minutes to strip padding.
 
-NOTE: we also convert this file back to HFDS.
+Convert the stripped `.pt` to HFDS (same command as Step 2, but with `--is-pre-padded false`):
+
+```bash
+PATH_SOURCE=resources/parnet-encore-eclip/600nt_windows.no-one-hot.stripped/
+
+time pixi run -e parnet-dev-cu11 python scripts/convert_pt_to_hfds.py \
+    --input          $PATH_SOURCE/encode.filtered.pt \
+    --outputdir      $PATH_SOURCE/encode.filtered.hfds \
+    --num-shards     train:76,valid:18,test:10 \
+    --metadata-basename encode.filtered.hfds \
+    --total-key      eCLIP \
+    --is-pre-padded  false \
+    --seq-len        600 \
+    ;
+```
 
 
 ### Export BED6

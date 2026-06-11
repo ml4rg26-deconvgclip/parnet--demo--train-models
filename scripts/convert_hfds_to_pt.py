@@ -14,28 +14,30 @@ Usage
 -----
 # Recommended: save uncompressed, then compress in parallel with pigz
 python scripts/convert_hfds_to_pt.py \\
-    --input  resources/parnet-encore-eclip/600nt_windows/encode.filtered.hfds \\
-    --output resources/parnet-encore-eclip/600nt_windows/encode.filtered.pt
+    --input          resources/parnet-encore-eclip/600nt_windows/encode.filtered.hfds \\
+    --output         resources/parnet-encore-eclip/600nt_windows/encode.filtered.pt \\
+    --total-key      eCLIP \\
+    --is-pre-padded  true \\
+    --seq-len        600
 pigz -p 16 resources/parnet-encore-eclip/600nt_windows/encode.filtered.pt
 
 # Alternative: write compressed directly (slow — single-threaded gzip)
 python scripts/convert_hfds_to_pt.py \\
-    --input  resources/parnet-encore-eclip/600nt_windows/encode.filtered.hfds \\
-    --output resources/parnet-encore-eclip/600nt_windows/encode.filtered.pt.gz
+    --input          resources/parnet-encore-eclip/600nt_windows/encode.filtered.hfds \\
+    --output         resources/parnet-encore-eclip/600nt_windows/encode.filtered.pt.gz \\
+    --total-key      eCLIP \\
+    --is-pre-padded  true \\
+    --seq-len        600
 
-# Rename "eCLIP" → "total" in the output so total_key="total" works universally
-python scripts/convert_hfds_to_pt.py \\
-    --input  encode.filtered.hfds \\
-    --output encode.filtered.pt \\
-    --rename-track-names '{"eCLIP": "total"}'
-
-# Rename and pin the total_key in one pass.
+# Rename "eCLIP" → "total" and pin the total_key in one pass.
 # --total-key must name the POST-rename key ("total", not "eCLIP").
 python scripts/convert_hfds_to_pt.py \\
-    --input  encode.filtered.hfds \\
-    --output encode.filtered.pt \\
+    --input          encode.filtered.hfds \\
+    --output         encode.filtered.pt \\
     --rename-track-names '{"eCLIP": "total"}' \\
-    --total-key total
+    --total-key      total \\
+    --is-pre-padded  true \\
+    --seq-len        600
 
 By default, if --output is omitted, the output is written next to the input HFDS
 directory with the `.hfds` suffix replaced by `.pt`.
@@ -130,7 +132,9 @@ def convert(
     output_path: Path,
     rename: dict[str, str] | None = None,
     metadata_basename: str | None = None,
-    total_key_arg: str | None = None,
+    total_key_arg: str = "",
+    is_pre_padded_arg: str = "false",
+    seq_len_arg: int = 600,
 ) -> None:
     rename = rename or {}
     print(f"Loading HFDS from {input_path} ...", flush=True)
@@ -154,25 +158,16 @@ def convert(
         ]
         split_counts[out_name] = n
 
-    # Infer metadata from first sample (after renaming)
+    # Validate metadata args against first sample (after renaming).
     first = result[list(result.keys())[0]][0]
-    seq_len = len(first["inputs"]["sequence"])
     task_names = list(first["outputs"].keys())
-    if total_key_arg is not None:
-        if total_key_arg not in task_names:
-            print(f"ERROR: --total-key '{total_key_arg}' not in task names {task_names}", file=sys.stderr)
-            sys.exit(1)
-        total_key = total_key_arg
-    else:
-        total_key = task_names[0]
-        if len(task_names) > 1:
-            print(f"WARNING: --total-key not set; using first task '{total_key}'. "
-                  f"Available: {task_names}", flush=True)
+    if total_key_arg not in task_names:
+        print(f"ERROR: --total-key '{total_key_arg}' not in task names {task_names}", file=sys.stderr)
+        sys.exit(1)
+    total_key = total_key_arg
     n_tracks = first["outputs"][total_key]["size"][0]
-    # is_pre_padded: source HFDS has sequences stored at full window length with N's at edges.
-    # True when source meta lacks pad_side (old pre-padded HFDS format).
-    _src_pad_side = hfds[src_splits[0]][0]["meta"].get("pad_side")
-    is_pre_padded = _src_pad_side not in {0, 1, 2}
+    seq_len = seq_len_arg
+    is_pre_padded = (is_pre_padded_arg == "true")
 
     print(f"\nSaving → {output_path} ...", flush=True)
     output_path.parent.mkdir(parents=True, exist_ok=True)
@@ -221,13 +216,23 @@ def main() -> None:
                              "the .pt output (default: derived from output file stem). "
                              "Use this to avoid collisions when multiple datasets share "
                              "the same output directory.")
-    parser.add_argument("--total-key", type=str, default=None,
+    parser.add_argument("--total-key", type=str, required=True,
                         help="Key to record as total_key in the metadata sidecar. "
                              "Must name a key in the OUTPUT after any --rename-track-names "
                              "is applied (rename runs first). "
-                             "Defaults to the first output key (with a warning). "
                              "Example without rename: --total-key eCLIP. "
-                             "Example with rename '{'eCLIP':'total'}': --total-key total.")
+                             "Example with rename '{\"eCLIP\":\"total\"}': --total-key total.")
+    parser.add_argument("--is-pre-padded", choices=["true", "false"], required=True,
+                        help="Whether the SOURCE sequences are stored at fixed window length "
+                             "with N-padding ('true') or at native genomic length / stripped "
+                             "('false'). Written as is_pre_padded in the metadata sidecar. "
+                             "Example: --is-pre-padded false")
+    parser.add_argument("--seq-len", type=int, required=True,
+                        help="Window length (nt) to record as seq_len in the metadata sidecar. "
+                             "For pre-padded sources this equals the stored sequence length. "
+                             "For stripped sources the stored sequences are shorter; seq_len "
+                             "records the model window, not the stored tile length. "
+                             "Example: --seq-len 600")
     args = parser.parse_args()
 
     input_path: Path = args.input.resolve()
@@ -254,7 +259,9 @@ def main() -> None:
     convert(input_path, output_path,
             rename=rename,
             metadata_basename=args.metadata_basename,
-            total_key_arg=args.total_key)
+            total_key_arg=args.total_key,
+            is_pre_padded_arg=args.is_pre_padded,
+            seq_len_arg=args.seq_len)
 
 
 if __name__ == "__main__":

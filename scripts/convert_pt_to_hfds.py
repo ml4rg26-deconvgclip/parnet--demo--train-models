@@ -21,28 +21,30 @@ A metadata sidecar (<basename>.metadata.yaml) is written inside the output direc
 Usage
 -----
 python scripts/convert_pt_to_hfds.py \\
-    --input     resources/parnet-encore-eclip/600nt_windows/encode.filtered.pt \\
-    --outputdir resources/parnet-encore-eclip/600nt_windows/encode.filtered.hfds
+    --input          resources/parnet-encore-eclip/600nt_windows/encode.filtered.pt \\
+    --outputdir      resources/parnet-encore-eclip/600nt_windows/encode.filtered.hfds \\
+    --total-key      eCLIP \\
+    --is-pre-padded  true \\
+    --seq-len        600
 
 # Match the sharding of the source HFDS (train: 76, valid: 18, test: 10)
 python scripts/convert_pt_to_hfds.py \\
-    --input     encode.filtered.pt \\
-    --outputdir encode.filtered.hfds \\
-    --num-shards train:76,valid:18,test:10
+    --input          encode.filtered.pt \\
+    --outputdir      encode.filtered.hfds \\
+    --num-shards     train:76,valid:18,test:10 \\
+    --total-key      eCLIP \\
+    --is-pre-padded  true \\
+    --seq-len        600
 
-# Rename "eCLIP" → "total" in the output so total_key="total" works universally
-python scripts/convert_pt_to_hfds.py \\
-    --input encode.filtered.pt \\
-    --outputdir encode.filtered.hfds \\
-    --rename-track-names '{"eCLIP": "total"}'
-
-# Rename and pin the total_key in one pass.
+# Rename "eCLIP" → "total" and pin the total_key in one pass.
 # --total-key must name the POST-rename key ("total", not "eCLIP").
 python scripts/convert_pt_to_hfds.py \\
-    --input encode.filtered.pt \\
-    --outputdir encode.filtered.hfds \\
+    --input          encode.filtered.pt \\
+    --outputdir      encode.filtered.hfds \\
     --rename-track-names '{"eCLIP": "total"}' \\
-    --total-key total
+    --total-key      total \\
+    --is-pre-padded  true \\
+    --seq-len        600
 
 By default, if --outputdir is omitted, the output is written next to the input
 with the `.pt` / `.pt.gz` suffix replaced by `.no-one-hot.hfds`.
@@ -153,7 +155,9 @@ def convert(
     num_shards: str = "4",
     rename: dict[str, str] | None = None,
     metadata_basename: str | None = None,
-    total_key_arg: str | None = None,
+    total_key_arg: str = "",
+    is_pre_padded_arg: str = "false",
+    seq_len_arg: int = 600,
 ) -> None:
     rename = rename or {}
     data = _load_pt(input_path)
@@ -162,23 +166,16 @@ def convert(
 
     shard_map = _parse_num_shards(num_shards, splits)
 
-    # Infer metadata from first sample before the main loop (avoids keeping all rows in RAM).
+    # Validate metadata args against first sample (rename applied first).
     _first = _convert_sample(data[splits[0]][0], rename)
     task_names = list(_first["outputs"].keys())
-    if total_key_arg is not None:
-        if total_key_arg not in task_names:
-            print(f"ERROR: --total-key '{total_key_arg}' not in task names {task_names}", file=sys.stderr)
-            sys.exit(1)
-        total_key = total_key_arg
-    else:
-        total_key = task_names[0]
-        if len(task_names) > 1:
-            print(f"WARNING: --total-key not set; using first task '{total_key}'. "
-                  f"Available: {task_names}", flush=True)
+    if total_key_arg not in task_names:
+        print(f"ERROR: --total-key '{total_key_arg}' not in task names {task_names}", file=sys.stderr)
+        sys.exit(1)
+    total_key = total_key_arg
     n_tracks   = _first["outputs"][total_key]["size"][0]
-    seq_len    = len(_first["inputs"]["sequence"])
-    _src_pad_side = data[splits[0]][0].get("meta", {}).get("pad_side")
-    is_pre_padded = _src_pad_side not in {0, 1, 2}
+    seq_len    = seq_len_arg
+    is_pre_padded = (is_pre_padded_arg == "true")
 
     split_counts: dict[str, int] = {}
 
@@ -268,13 +265,23 @@ def main() -> None:
                              "the HFDS directory (default: derived from output dir name). "
                              "Use this to avoid collisions when multiple datasets share "
                              "the same parent directory.")
-    parser.add_argument("--total-key", type=str, default=None,
+    parser.add_argument("--total-key", type=str, required=True,
                         help="Key to record as total_key in the metadata sidecar. "
                              "Must name a key in the OUTPUT after any --rename-track-names "
                              "is applied (rename runs first). "
-                             "Defaults to the first output key (with a warning). "
                              "Example without rename: --total-key eCLIP. "
                              "Example with rename '{\"eCLIP\":\"total\"}': --total-key total.")
+    parser.add_argument("--is-pre-padded", choices=["true", "false"], required=True,
+                        help="Whether the SOURCE sequences are stored at fixed window length "
+                             "with N-padding ('true') or at native genomic length / stripped "
+                             "('false'). Written as is_pre_padded in the metadata sidecar. "
+                             "Example: --is-pre-padded false")
+    parser.add_argument("--seq-len", type=int, required=True,
+                        help="Window length (nt) to record as seq_len in the metadata sidecar. "
+                             "For pre-padded sources this equals the stored sequence length. "
+                             "For stripped sources the stored sequences are shorter; seq_len "
+                             "records the model window, not the stored tile length. "
+                             "Example: --seq-len 600")
     args = parser.parse_args()
 
     input_path: Path = args.input.resolve()
@@ -304,7 +311,9 @@ def main() -> None:
             num_shards=args.num_shards,
             rename=rename,
             metadata_basename=args.metadata_basename,
-            total_key_arg=args.total_key)
+            total_key_arg=args.total_key,
+            is_pre_padded_arg=args.is_pre_padded,
+            seq_len_arg=args.seq_len)
 
 
 if __name__ == "__main__":
