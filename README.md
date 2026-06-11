@@ -257,6 +257,8 @@ The **canonical files** you should work with for any downstream work are the
 └── full_rbp_set.tsv
 ```
 
+See the [quick_inspect.py.ipynb](notebooks/diagnostics/quick_inspect.py.ipynb) notebook for a quick inspection of the canonical HFDS files.
+
 ### Spliceosome HepG2 (9-RBP subset)
 
 End-to-end fine-tuning on a filtered subset of the ENCODE eCLIP data: dataset preparation →
