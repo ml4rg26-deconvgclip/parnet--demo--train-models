@@ -8,6 +8,19 @@ Currently focusing on using pretrained models to speed up the process + training
 
 ## Set-up
 
+### Working on the forked repository
+
+This repository is a fork from the <https://github.com/project-parnet/parnet--demo--train-models> repository.
+
+We take the following steps to continue development here:
+
+1. `git checkout dev` to switch to the development branch.
+2. `git remote add upstream https://github.com/project-parnet/parnet--demo--train-models.git`
+
+That way : `main` remain a clean branch in sync with the upstream (e.g. receive updates) as any change we make here is made in `dev`.
+
+NOTE: `dev` should be the default branch when you clone the repository, but if not, you can switch to it with `git checkout dev`.
+
 ### General organisation
 
 The project assumes a multi-repo structure where a repository is dedicated to a specific section of the project,
