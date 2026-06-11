@@ -70,13 +70,14 @@ hgvs = ">=1.5.6,<2"
 
 [pypi-dependencies]
 
+# Local library — filtering utilities, sparse helpers, dataset classes
+parnet--demo--train-models = {path = ".", editable = true}
+
 google-api-python-client = "*"
 dask = ">=2025.2.0,<2025.11.0"
 jax = ">=0.4,<0.5"
 jaxlib = ">=0.4,<0.5"
 protobuf = "==4.25.8"
-pylbsr = { git = "git+https://github.com/lambosaur/pylbsr.git", rev = "main" }
-
 # ===============================================================
 
 [feature.superfluous.dependencies]
@@ -253,15 +254,19 @@ cuml-cu12 = ">=25.0,<26.0"
 
 [feature.parnet-libs-git.pypi-dependencies]
 
-parnet_analyses_libs = { git = "git+https://github.com/parnet-project/parnet_analyses_libs.git", rev = "main" }
+pylbsr                  = { git = "git+https://github.com/lambosaur/pylbsr.git",                       rev = "main" }
+parnet_analyses_libs    = { git = "git+https://github.com/parnet-project/parnet_analyses_libs.git",    rev = "main" }
 parnet_additional_utils = { git = "git+https://github.com/parnet-project/parnet_additional_utils.git", rev = "main" }
+metamotif               = { git = "git+https://github.com/lambosaur/metamotif.git", rev = "develop" }
 
 # ===============================================================
 
 [feature.parnet-libs-local.pypi-dependencies]
 
-parnet_analyses_libs = { path = "../../parnet_analyses_libs", editable = true }
-parnet_additional_utils = { path = "../../parnet_additional_utils", editable = true }
+pylbsr                  = { path = "externals/pylbsr",                  editable = true }
+parnet_analyses_libs    = { path = "externals/parnet_analyses_libs",    editable = true }
+parnet_additional_utils = { path = "externals/parnet_additional_utils", editable = true }
+metamotif               = { path = "externals/metamotif",               editable = true }
 
 # ===============================================================
 

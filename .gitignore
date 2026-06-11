@@ -1,4 +1,8 @@
 
+# Local sibling-repo symlinks (machine-specific, not committed)
+externals/*
+!externals/.placeholder
+
 # Don't add dev notebooks
 develop/
 
